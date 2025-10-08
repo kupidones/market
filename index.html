@@ -1,4 +1,4 @@
-<!-- Telegram Web App Integration -->
+<!-- Telegram Web App Integration - Safe Version -->
 <script>
 // Проверяем, открыто ли в Telegram Web App
 if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
@@ -16,20 +16,20 @@ if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
         return isMobile && isMobilePlatform && isSmallScreen;
     }
     
-    // Основная инициализация
+    // Основная инициализация - НЕ МЕШАЕМ ОТОБРАЖЕНИЮ САЙТА
     tg.ready();
     tg.expand();
     
     // Отключаем свайпы для закрытия (только на мобильных)
     if (tg.isVersionAtLeast('6.7') && isMobileDevice()) {
         tg.disableVerticalSwipes();
-        console.log('✅ Свайпы для закрытия отключены (мобильное устройство)');
+        console.log('✅ Свайпы для закрытия отключены');
     }
     
     // Включаем подтверждение закрытия
     tg.enableClosingConfirmation();
     
-    // Устанавливаем цвета
+    // Устанавливаем цвета (прозрачные, чтобы не мешать)
     tg.setBackgroundColor('#ffffff');
     tg.setHeaderColor('#ffffff');
     
@@ -37,66 +37,36 @@ if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
     if (tg.isVersionAtLeast('6.1') && isMobileDevice()) {
         setTimeout(() => {
             tg.requestFullscreen();
-            console.log('✅ Полноэкранный режим активирован (мобильное устройство)');
-        }, 1500);
-    } else {
-        console.log('💻 Компьютер - обычный режим');
+            console.log('✅ Полноэкранный режим активирован');
+        }, 2000); // Увеличили задержку чтобы сайт успел загрузиться
     }
     
-    // Создаем информационную панель
-    const infoPanel = document.createElement('div');
-    infoPanel.style.cssText = `
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 10px 15px;
-        border-radius: 8px;
-        font-size: 12px;
-        z-index: 10000;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        font-family: Arial, sans-serif;
-        max-width: 200px;
-    `;
-    
-    const deviceType = isMobileDevice() ? '📱 Мобильное' : '💻 Компьютер';
-    const fullscreenStatus = isMobileDevice() ? '✅ Fullscreen' : '❌ Обычный режим';
-    
-    infoPanel.innerHTML = `
-        <div><strong>${deviceType}</strong></div>
-        <div>${fullscreenStatus}</div>
-        <div>Платформа: ${tg.platform}</div>
-    `;
-    
-    document.body.appendChild(infoPanel);
-    
-    // Создаем кнопку закрытия
-    const closeButton = document.createElement('button');
-    closeButton.innerHTML = '❌ Закрыть';
-    closeButton.style.cssText = `
-        position: fixed;
-        top: 15px;
-        right: 15px;
-        background: rgba(255, 0, 0, 0.3);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        padding: 10px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        z-index: 10000;
-        font-size: 14px;
-        backdrop-filter: blur(10px);
-        font-family: Arial, sans-serif;
-    `;
-    closeButton.onclick = function() {
-        if (confirm('Закрыть Market App?')) {
-            tg.close();
-        }
-    };
-    
-    document.body.appendChild(closeButton);
+    // Создаем кнопку закрытия - добавляем только если её нет
+    if (!document.getElementById('tg-close-btn')) {
+        const closeButton = document.createElement('button');
+        closeButton.id = 'tg-close-btn';
+        closeButton.innerHTML = '❌ Закрыть';
+        closeButton.style.cssText = `
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            z-index: 10000;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+        `;
+        closeButton.onclick = function() {
+            if (confirm('Закрыть Market App?')) {
+                tg.close();
+            }
+        };
+        document.body.appendChild(closeButton);
+    }
     
 } else {
     console.log('🌐 Market App запущен в обычном браузере');
