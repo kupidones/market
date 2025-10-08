@@ -6,7 +6,6 @@
     <title>Fullscreen Black App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Сбрасываем отступы и устанавливаем черный фон */
         * {
             margin: 0;
             padding: 0;
@@ -14,8 +13,8 @@
         }
         
         body {
-            background-color: #000000; /* Черный фон */
-            color: #ffffff; /* Белый текст */
+            background-color: #000000;
+            color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
@@ -26,101 +25,112 @@
             padding: 20px;
         }
         
-        .container {
-            max-width: 100%;
-        }
-        
-        h1 {
-            font-size: 24px;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
-        
-        p {
-            font-size: 16px;
-            opacity: 0.8;
-            margin-bottom: 24px;
-        }
-        
-        .status {
+        .info {
             background: rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            margin: 16px 0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
             font-size: 14px;
+        }
+        
+        .button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🖤 Fullscreen App</h1>
-        <p>Приложение в полноэкранном режиме с черным фоном</p>
+        <p>Приложение с черным фоном</p>
         
-        <div class="status" id="status">
-            Инициализация...
+        <div class="info" id="modeInfo">
+            Режим: загрузка...
         </div>
         
-        <div class="status" id="viewportInfo">
-            Загрузка информации...
+        <div class="info" id="sizeInfo">
+            Размеры: загрузка...
+        </div>
+        
+        <div>
+            <button class="button" onclick="requestFullscreen()">Включить Fullscreen</button>
+            <button class="button" onclick="exitFullscreen()">Выключить Fullscreen</button>
         </div>
     </div>
 
     <script>
-        // Получаем экземпляр Telegram Web App
         const tg = window.Telegram.WebApp;
         
-        // Инициализация приложения согласно документации
         function initializeApp() {
-            // 1. Помечаем приложение как готовое к отображению
+            // 1. Уведомляем Telegram, что приложение готово
             tg.ready();
             
-            // 2. Устанавливаем черный цвет фона
+            // 2. Устанавливаем черный фон
             tg.setBackgroundColor('#000000');
-            
-            // 3. Устанавливаем черный цвет для header
             tg.setHeaderColor('#000000');
             
-            // 4. Активируем полноэкранный режим
-            tg.expand(); // Расширяем на всю высоту
-            tg.enableClosingConfirmation(); // Подтверждение закрытия
+            // 3. Расширяем на всю высоту
+            tg.expand();
             
-            // 5. Пытаемся включить полноэкранный режим (если доступен)
-            if (tg.isVersionAtLeast('6.1')) {
-                setTimeout(() => {
+            // 4. Включаем подтверждение закрытия
+            tg.enableClosingConfirmation();
+            
+            // 5. Автоматически запрашиваем полноэкранный режим
+            setTimeout(() => {
+                if (tg.isVersionAtLeast('6.1')) {
                     tg.requestFullscreen();
-                }, 100);
+                }
+            }, 1000);
+            
+            updateAppInfo();
+            console.log('App initialized');
+        }
+        
+        function updateAppInfo() {
+            const modeElement = document.getElementById('modeInfo');
+            const sizeElement = document.getElementById('sizeInfo');
+            
+            modeElement.innerHTML = `
+                <strong>Fullscreen:</strong> ${tg.isFullscreen ? 'ДА ✅' : 'НЕТ ❌'}<br>
+                <strong>Expanded:</strong> ${tg.isExpanded ? 'ДА ✅' : 'НЕТ ❌'}<br>
+                <strong>Platform:</strong> ${tg.platform}
+            `;
+            
+            sizeElement.innerHTML = `
+                <strong>Viewport Height:</strong> ${tg.viewportHeight}px<br>
+                <strong>Stable Height:</strong> ${tg.viewportStableHeight}px<br>
+                <strong>Safe Area:</strong> Top: ${tg.safeAreaInset?.top || 0}px
+            `;
+        }
+        
+        function requestFullscreen() {
+            if (tg.isVersionAtLeast('6.1')) {
+                tg.requestFullscreen();
+            } else {
+                alert('Fullscreen не поддерживается в этой версии Telegram');
             }
-            
-            // Обновляем информацию о статусе
-            updateStatus();
         }
         
-        // Функция для обновления информации о статусе
-        function updateStatus() {
-            const statusElement = document.getElementById('status');
-            const viewportElement = document.getElementById('viewportInfo');
-            
-            statusElement.innerHTML = `
-                <strong>Режим:</strong> ${tg.isExpanded ? 'EXPANDED' : 'COMPACT'}<br>
-                <strong>Fullscreen:</strong> ${tg.isFullscreen ? 'ДА' : 'НЕТ'}<br>
-                <strong>Версия платформы:</strong> ${tg.platform}
-            `;
-            
-            viewportElement.innerHTML = `
-                <strong>Высота экрана:</strong> ${tg.viewportHeight}px<br>
-                <strong>Стабильная высота:</strong> ${tg.viewportStableHeight}px
-            `;
+        function exitFullscreen() {
+            if (tg.isVersionAtLeast('6.1')) {
+                tg.exitFullscreen();
+            }
         }
         
-        // Обработчики событий изменения viewport
-        tg.onEvent('viewportChanged', updateStatus);
-        tg.onEvent('fullscreenChanged', updateStatus);
+        // Обработчики событий
+        tg.onEvent('viewportChanged', updateAppInfo);
+        tg.onEvent('fullscreenChanged', (isFullscreen) => {
+            console.log('Fullscreen changed to:', isFullscreen);
+            updateAppInfo();
+        });
         
-        // Запускаем инициализацию при загрузке страницы
+        // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', initializeApp);
-        
-        // Также запускаем при полной загрузке
-        window.addEventListener('load', initializeApp);
     </script>
 </body>
 </html>
