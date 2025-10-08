@@ -1,74 +1,38 @@
-<!-- Telegram Web App Integration - Safe Version -->
+<!-- Safe Telegram Web App Integration -->
 <script>
-// Проверяем, открыто ли в Telegram Web App
-if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
-    const tg = window.Telegram.WebApp;
-    
-    console.log('🚀 Market App запущен в Telegram Web App');
-    
-    // Функция для определения мобильного устройства
-    function isMobileDevice() {
-        const userAgent = navigator.userAgent.toLowerCase();
-        const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-        const isMobilePlatform = tg.platform === 'ios' || tg.platform === 'android';
-        const isSmallScreen = window.innerWidth <= 768;
-        
-        return isMobile && isMobilePlatform && isSmallScreen;
-    }
-    
-    // Основная инициализация - НЕ МЕШАЕМ ОТОБРАЖЕНИЮ САЙТА
-    tg.ready();
-    tg.expand();
-    
-    // Отключаем свайпы для закрытия (только на мобильных)
-    if (tg.isVersionAtLeast('6.7') && isMobileDevice()) {
-        tg.disableVerticalSwipes();
-        console.log('✅ Свайпы для закрытия отключены');
-    }
-    
-    // Включаем подтверждение закрытия
-    tg.enableClosingConfirmation();
-    
-    // Устанавливаем цвета (прозрачные, чтобы не мешать)
-    tg.setBackgroundColor('#ffffff');
-    tg.setHeaderColor('#ffffff');
-    
-    // Полноэкранный режим ТОЛЬКО на мобильных устройствах
-    if (tg.isVersionAtLeast('6.1') && isMobileDevice()) {
-        setTimeout(() => {
-            tg.requestFullscreen();
-            console.log('✅ Полноэкранный режим активирован');
-        }, 2000); // Увеличили задержку чтобы сайт успел загрузиться
-    }
-    
-    // Создаем кнопку закрытия - добавляем только если её нет
-    if (!document.getElementById('tg-close-btn')) {
-        const closeButton = document.createElement('button');
-        closeButton.id = 'tg-close-btn';
-        closeButton.innerHTML = '❌ Закрыть';
-        closeButton.style.cssText = `
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: rgba(255, 0, 0, 0.7);
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            z-index: 10000;
-            font-size: 12px;
-            font-family: Arial, sans-serif;
-        `;
-        closeButton.onclick = function() {
-            if (confirm('Закрыть Market App?')) {
-                tg.close();
+// Ждем полной загрузки страницы
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        // Проверяем Telegram Web App очень аккуратно
+        if (window.Telegram && window.Telegram.WebApp) {
+            try {
+                const tg = window.Telegram.WebApp;
+                console.log('🔍 Telegram Web App обнаружен');
+                
+                // Только базовые функции которые безопасны
+                tg.ready();
+                tg.expand();
+                
+                // Определяем мобильное устройство
+                const isMobile = /android|iphone|ipad/i.test(navigator.userAgent.toLowerCase());
+                
+                // Полноэкранный режим ТОЛЬКО на мобильных и только если сайт нормально отображается
+                if (isMobile && tg.isVersionAtLeast('6.1')) {
+                    setTimeout(() => {
+                        // Проверяем что сайт видим перед включением fullscreen
+                        if (document.visibilityState === 'visible') {
+                            tg.requestFullscreen();
+                            console.log('✅ Fullscreen включен на мобильном');
+                        }
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                console.error('❌ Ошибка в Telegram Web App:', error);
             }
-        };
-        document.body.appendChild(closeButton);
-    }
-    
-} else {
-    console.log('🌐 Market App запущен в обычном браузере');
-}
+        } else {
+            console.log('🌐 Обычный браузер - Telegram функции не активированы');
+        }
+    }, 1000); // Даем сайту время полностью загрузиться
+});
 </script>
