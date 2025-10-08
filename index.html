@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fullscreen Black App</title>
+    <title>Fullscreen Mobile App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -31,23 +31,65 @@
             border-radius: 10px;
             margin: 10px 0;
             font-size: 14px;
+            max-width: 400px;
+            width: 100%;
         }
         
-        .button {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .device-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
             color: white;
-            padding: 10px 20px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .mobile-only {
+            display: none;
+            background: rgba(0, 255, 0, 0.2);
+            padding: 10px;
             border-radius: 8px;
-            margin: 5px;
-            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .desktop-only {
+            display: block;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-only {
+                display: block;
+            }
+            .desktop-only {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="deviceBadge" class="device-badge">Определение устройства...</div>
+    
     <div class="container">
-        <h1>🖤 Fullscreen App</h1>
+        <h1>📱 Mobile Fullscreen App</h1>
         <p>Приложение с черным фоном</p>
+        
+        <div class="mobile-only">
+            ✅ Вы на мобильном устройстве - полноэкранный режим активен
+        </div>
+        
+        <div class="desktop-only">
+            💻 Вы на компьютере - обычный режим
+        </div>
+        
+        <div class="info" id="deviceInfo">
+            Информация об устройстве: загрузка...
+        </div>
         
         <div class="info" id="modeInfo">
             Режим: загрузка...
@@ -56,77 +98,108 @@
         <div class="info" id="sizeInfo">
             Размеры: загрузка...
         </div>
-        
-        <div>
-            <button class="button" onclick="requestFullscreen()">Включить Fullscreen</button>
-            <button class="button" onclick="exitFullscreen()">Выключить Fullscreen</button>
-        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         
-        function initializeApp() {
-            // 1. Уведомляем Telegram, что приложение готово
-            tg.ready();
+        // Функция для определения мобильного устройства
+        function isMobileDevice() {
+            // Способ 1: Проверка User Agent
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
             
-            // 2. Устанавливаем черный фон
-            tg.setBackgroundColor('#000000');
-            tg.setHeaderColor('#000000');
+            // Способ 2: Проверка ширины экрана и touch-событий
+            const isMobileScreen = window.innerWidth <= 768;
+            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
             
-            // 3. Расширяем на всю высоту
-            tg.expand();
+            // Способ 3: Проверка платформы Telegram
+            const isMobilePlatform = tg.platform === 'ios' || tg.platform === 'android';
             
-            // 4. Включаем подтверждение закрытия
-            tg.enableClosingConfirmation();
-            
-            // 5. Автоматически запрашиваем полноэкранный режим
-            setTimeout(() => {
-                if (tg.isVersionAtLeast('6.1')) {
-                    tg.requestFullscreen();
-                }
-            }, 1000);
-            
-            updateAppInfo();
-            console.log('App initialized');
+            // Итоговый результат (можно настроить логику)
+            return isMobileUA && isMobileScreen && hasTouch && isMobilePlatform;
         }
         
-        function updateAppInfo() {
+        // Функция для получения подробной информации об устройстве
+        function getDeviceInfo() {
+            return {
+                userAgent: navigator.userAgent,
+                platform: tg.platform,
+                screenWidth: window.innerWidth,
+                screenHeight: window.innerHeight,
+                hasTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+                isMobile: isMobileDevice()
+            };
+        }
+        
+        function initializeApp() {
+            // Базовая инициализация для всех устройств
+            tg.ready();
+            tg.setBackgroundColor('#000000');
+            tg.setHeaderColor('#000000');
+            tg.expand();
+            
+            const deviceInfo = getDeviceInfo();
+            const deviceBadge = document.getElementById('deviceBadge');
+            
+            // Обновляем бейдж устройства
+            if (deviceInfo.isMobile) {
+                deviceBadge.textContent = `📱 Mobile (${deviceInfo.platform})`;
+                deviceBadge.style.background = '#44ff44';
+                
+                // Включаем полноэкранный режим только на мобильных
+                if (tg.isVersionAtLeast('6.1')) {
+                    setTimeout(() => {
+                        tg.requestFullscreen();
+                        console.log('Fullscreen activated for mobile device');
+                    }, 800);
+                }
+            } else {
+                deviceBadge.textContent = '💻 Desktop';
+                deviceBadge.style.background = '#ff4444';
+                console.log('Desktop device - fullscreen not activated');
+            }
+            
+            updateAppInfo(deviceInfo);
+        }
+        
+        function updateAppInfo(deviceInfo) {
+            const deviceElement = document.getElementById('deviceInfo');
             const modeElement = document.getElementById('modeInfo');
             const sizeElement = document.getElementById('sizeInfo');
+            
+            deviceElement.innerHTML = `
+                <strong>Платформа:</strong> ${deviceInfo.platform}<br>
+                <strong>Устройство:</strong> ${deviceInfo.isMobile ? 'Мобильное 📱' : 'Компьютер 💻'}<br>
+                <strong>Touch:</strong> ${deviceInfo.hasTouch ? 'Да' : 'Нет'}<br>
+                <strong>Ширина экрана:</strong> ${deviceInfo.screenWidth}px
+            `;
             
             modeElement.innerHTML = `
                 <strong>Fullscreen:</strong> ${tg.isFullscreen ? 'ДА ✅' : 'НЕТ ❌'}<br>
                 <strong>Expanded:</strong> ${tg.isExpanded ? 'ДА ✅' : 'НЕТ ❌'}<br>
-                <strong>Platform:</strong> ${tg.platform}
+                <strong>Версия Telegram:</strong> ${tg.version}
             `;
             
             sizeElement.innerHTML = `
                 <strong>Viewport Height:</strong> ${tg.viewportHeight}px<br>
-                <strong>Stable Height:</strong> ${tg.viewportStableHeight}px<br>
-                <strong>Safe Area:</strong> Top: ${tg.safeAreaInset?.top || 0}px
+                <strong>Stable Height:</strong> ${tg.viewportStableHeight}px
             `;
         }
         
-        function requestFullscreen() {
-            if (tg.isVersionAtLeast('6.1')) {
-                tg.requestFullscreen();
-            } else {
-                alert('Fullscreen не поддерживается в этой версии Telegram');
-            }
-        }
-        
-        function exitFullscreen() {
-            if (tg.isVersionAtLeast('6.1')) {
-                tg.exitFullscreen();
-            }
-        }
-        
         // Обработчики событий
-        tg.onEvent('viewportChanged', updateAppInfo);
+        tg.onEvent('viewportChanged', () => {
+            updateAppInfo(getDeviceInfo());
+        });
+        
         tg.onEvent('fullscreenChanged', (isFullscreen) => {
             console.log('Fullscreen changed to:', isFullscreen);
-            updateAppInfo();
+            updateAppInfo(getDeviceInfo());
+        });
+        
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', () => {
+            updateAppInfo(getDeviceInfo());
         });
         
         // Инициализация при загрузке
