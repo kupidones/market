@@ -1,209 +1,188 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fullscreen Mobile App</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>No Swipe Close App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background-color: #000000;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .info {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-size: 14px;
-            max-width: 400px;
-            width: 100%;
-        }
-        
-        .device-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff4444;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-        }
-        
-        .mobile-only {
-            display: none;
-            background: rgba(0, 255, 0, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-        
-        .desktop-only {
-            display: block;
-            background: rgba(255, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-        
-        @media (max-width: 768px) {
-            .mobile-only {
-                display: block;
-            }
-            .desktop-only {
-                display: none;
-            }
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #000000;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 20px;
+        /* Запрещаем скролл */
+        overflow: hidden;
+      }
+
+      .swipe-blocker {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000000;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .status-panel {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 15px;
+        margin: 10px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .close-button {
+        background: rgba(255, 0, 0, 0.3);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+        font-size: 16px;
+      }
+
+      .swipe-warning {
+        background: rgba(255, 255, 0, 0.2);
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-size: 14px;
+      }
     </style>
-</head>
-<body>
-    <div id="deviceBadge" class="device-badge">Определение устройства...</div>
-    
-    <div class="container">
-        <h1>📱 Mobile Fullscreen App</h1>
-        <p>Приложение с черным фоном</p>
-        
-        <div class="mobile-only">
-            ✅ Вы на мобильном устройстве - полноэкранный режим активен
-        </div>
-        
-        <div class="desktop-only">
-            💻 Вы на компьютере - обычный режим
-        </div>
-        
-        <div class="info" id="deviceInfo">
-            Информация об устройстве: загрузка...
-        </div>
-        
-        <div class="info" id="modeInfo">
-            Режим: загрузка...
-        </div>
-        
-        <div class="info" id="sizeInfo">
-            Размеры: загрузка...
-        </div>
+  </head>
+  <body>
+    <div class="swipe-blocker">
+      <div class="status-panel">
+        <h1>🚫 No Swipe Close</h1>
+        <p>Закрытие свайпом отключено</p>
+      </div>
+
+      <div class="status-panel" id="swipeStatus">
+        <div class="swipe-warning">⚠️ Нельзя закрыть свайпом!</div>
+        <p>Статус свайпов: загрузка...</p>
+      </div>
+
+      <div class="status-panel" id="appStatus">
+        Статус приложения: загрузка...
+      </div>
+
+      <button class="close-button" onclick="closeApp()">
+        ❌ Закрыть приложение (только кнопкой)
+      </button>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        
-        // Функция для определения мобильного устройства
-        function isMobileDevice() {
-            // Способ 1: Проверка User Agent
-            const userAgent = navigator.userAgent.toLowerCase();
-            const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-            
-            // Способ 2: Проверка ширины экрана и touch-событий
-            const isMobileScreen = window.innerWidth <= 768;
-            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-            
-            // Способ 3: Проверка платформы Telegram
-            const isMobilePlatform = tg.platform === 'ios' || tg.platform === 'android';
-            
-            // Итоговый результат (можно настроить логику)
-            return isMobileUA && isMobileScreen && hasTouch && isMobilePlatform;
+      const tg = window.Telegram.WebApp;
+
+      function initializeNoSwipeApp() {
+        // 1. Уведомляем Telegram, что приложение готово
+        tg.ready();
+
+        // 2. Устанавливаем черный фон
+        tg.setBackgroundColor("#000000");
+        tg.setHeaderColor("#000000");
+
+        // 3. Расширяем на всю высоту
+        tg.expand();
+
+        // 4. ОТКЛЮЧАЕМ ВЕРТИКАЛЬНЫЕ СВАЙПЫ ДЛЯ ЗАКРЫТИЯ
+        tg.disableVerticalSwipes();
+
+        // 5. Включаем подтверждение закрытия
+        tg.enableClosingConfirmation();
+
+        // 6. Запрашиваем полноэкранный режим
+        if (tg.isVersionAtLeast("6.1")) {
+          tg.requestFullscreen();
         }
-        
-        // Функция для получения подробной информации об устройстве
-        function getDeviceInfo() {
-            return {
-                userAgent: navigator.userAgent,
-                platform: tg.platform,
-                screenWidth: window.innerWidth,
-                screenHeight: window.innerHeight,
-                hasTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
-                isMobile: isMobileDevice()
-            };
+
+        updateAppStatus();
+        console.log("Приложение запущено с отключенными свайпами");
+      }
+
+      function updateAppStatus() {
+        const swipeElement = document.getElementById("swipeStatus");
+        const appElement = document.getElementById("appStatus");
+
+        // Проверяем, поддерживается ли отключение свайпов
+        const supportsSwipeControl = tg.isVersionAtLeast("6.7");
+
+        swipeElement.innerHTML = `
+                <div class="swipe-warning">
+                    ⚠️ Нельзя закрыть свайпом!
+                </div>
+                <p><strong>Свайпы отключены:</strong> ДА ✅</p>
+                <p><strong>Поддержка управления свайпами:</strong> ${
+                  supportsSwipeControl ? "ДА ✅" : "ВЕРСИЯ 6.7+ ❌"
+                }</p>
+            `;
+
+        appElement.innerHTML = `
+                <p><strong>Fullscreen:</strong> ${
+                  tg.isFullscreen ? "ДА ✅" : "НЕТ ❌"
+                }</p>
+                <p><strong>Expanded:</strong> ${
+                  tg.isExpanded ? "ДА ✅" : "НЕТ ❌"
+                }</p>
+                <p><strong>Платформа:</strong> ${tg.platform}</p>
+                <p><strong>Версия Telegram:</strong> ${tg.version}</p>
+            `;
+      }
+
+      function closeApp() {
+        if (confirm("Вы уверены, что хотите закрыть приложение?")) {
+          tg.close();
         }
-        
-        function initializeApp() {
-            // Базовая инициализация для всех устройств
-            tg.ready();
-            tg.setBackgroundColor('#000000');
-            tg.setHeaderColor('#000000');
-            tg.expand();
-            
-            const deviceInfo = getDeviceInfo();
-            const deviceBadge = document.getElementById('deviceBadge');
-            
-            // Обновляем бейдж устройства
-            if (deviceInfo.isMobile) {
-                deviceBadge.textContent = `📱 Mobile (${deviceInfo.platform})`;
-                deviceBadge.style.background = '#44ff44';
-                
-                // Включаем полноэкранный режим только на мобильных
-                if (tg.isVersionAtLeast('6.1')) {
-                    setTimeout(() => {
-                        tg.requestFullscreen();
-                        console.log('Fullscreen activated for mobile device');
-                    }, 800);
-                }
-            } else {
-                deviceBadge.textContent = '💻 Desktop';
-                deviceBadge.style.background = '#ff4444';
-                console.log('Desktop device - fullscreen not activated');
+      }
+
+      // Обработчики событий для мониторинга
+      tg.onEvent("viewportChanged", updateAppStatus);
+      tg.onEvent("fullscreenChanged", updateAppStatus);
+
+      // Дополнительная защита от жестов
+      document.addEventListener(
+        "touchmove",
+        function (e) {
+          // Блокируем вертикальные свайпы
+          if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const startY = touch.clientY;
+
+            // Если это явный вертикальный свайп - блокируем
+            if (Math.abs(touch.clientY - startY) > 10) {
+              e.preventDefault();
             }
-            
-            updateAppInfo(deviceInfo);
-        }
-        
-        function updateAppInfo(deviceInfo) {
-            const deviceElement = document.getElementById('deviceInfo');
-            const modeElement = document.getElementById('modeInfo');
-            const sizeElement = document.getElementById('sizeInfo');
-            
-            deviceElement.innerHTML = `
-                <strong>Платформа:</strong> ${deviceInfo.platform}<br>
-                <strong>Устройство:</strong> ${deviceInfo.isMobile ? 'Мобильное 📱' : 'Компьютер 💻'}<br>
-                <strong>Touch:</strong> ${deviceInfo.hasTouch ? 'Да' : 'Нет'}<br>
-                <strong>Ширина экрана:</strong> ${deviceInfo.screenWidth}px
-            `;
-            
-            modeElement.innerHTML = `
-                <strong>Fullscreen:</strong> ${tg.isFullscreen ? 'ДА ✅' : 'НЕТ ❌'}<br>
-                <strong>Expanded:</strong> ${tg.isExpanded ? 'ДА ✅' : 'НЕТ ❌'}<br>
-                <strong>Версия Telegram:</strong> ${tg.version}
-            `;
-            
-            sizeElement.innerHTML = `
-                <strong>Viewport Height:</strong> ${tg.viewportHeight}px<br>
-                <strong>Stable Height:</strong> ${tg.viewportStableHeight}px
-            `;
-        }
-        
-        // Обработчики событий
-        tg.onEvent('viewportChanged', () => {
-            updateAppInfo(getDeviceInfo());
-        });
-        
-        tg.onEvent('fullscreenChanged', (isFullscreen) => {
-            console.log('Fullscreen changed to:', isFullscreen);
-            updateAppInfo(getDeviceInfo());
-        });
-        
-        // Обработчик изменения размера окна
-        window.addEventListener('resize', () => {
-            updateAppInfo(getDeviceInfo());
-        });
-        
-        // Инициализация при загрузке
-        document.addEventListener('DOMContentLoaded', initializeApp);
+          }
+        },
+        { passive: false }
+      );
+
+      // Инициализация при загрузке
+      document.addEventListener("DOMContentLoaded", initializeNoSwipeApp);
+
+      // Периодически проверяем статус
+      setInterval(updateAppStatus, 3000);
     </script>
-</body>
+  </body>
 </html>
