@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiniMarket</title>
+    <title>Main App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
       * {
@@ -11,260 +11,132 @@
         padding: 0;
         box-sizing: border-box;
       }
+
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           sans-serif;
-        background: #f8f9fa;
-        color: #333;
-      }
-      .container {
-        max-width: 100%;
-        padding: 15px;
-      }
-      .header {
-        text-align: center;
-        padding: 20px 0;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        border-radius: 0 0 20px 20px;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 100%;
+        text-align: center;
+        padding-top: 50px;
+      }
+
+      h1 {
+        font-size: 28px;
         margin-bottom: 20px;
-      }
-      .product-card {
-        background: white;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e9ecef;
-      }
-      .product-image {
-        width: 100%;
-        height: 150px;
-        background: #e9ecef;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        color: #6c757d;
-      }
-      .product-title {
         font-weight: 600;
-        margin-bottom: 5px;
+      }
+
+      p {
         font-size: 16px;
+        margin-bottom: 30px;
+        opacity: 0.9;
       }
-      .product-price {
-        color: #28a745;
-        font-weight: bold;
-        font-size: 18px;
-        margin-bottom: 10px;
-      }
-      .btn {
-        background: #007bff;
+
+      .button {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
         color: white;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 8px;
-        width: 100%;
+        padding: 15px 30px;
+        border-radius: 25px;
         font-size: 16px;
         cursor: pointer;
-        transition: background 0.3s;
+        margin: 10px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
       }
-      .btn:hover {
-        background: #0056b3;
+
+      .button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
       }
-      .btn:active {
-        transform: scale(0.98);
-      }
-      .cart-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        font-size: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        cursor: pointer;
-      }
-      .cart-count {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: #dc3545;
-        color: white;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        font-size: 12px;
+
+      .features {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 40px;
+      }
+
+      .feature-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="header">
-        <h1>🛍️ MiniMarket</h1>
-        <p>Покупайте легко и быстро!</p>
-      </div>
+      <h1>🚀 Добро пожаловать!</h1>
+      <p>Это полноэкранное приложение работает внутри Telegram</p>
 
-      <div id="products-list">
-        <!-- Товары загружаются здесь -->
+      <button class="button" onclick="sendData()">📨 Отправить данные</button>
+      <button class="button" onclick="closeApp()">❌ Закрыть</button>
+      <button class="button" onclick="openExternal()">🌐 Открыть DNS</button>
+
+      <div class="features">
+        <div class="feature-item">
+          <strong>Полноэкранный режим</strong>
+          <p>Приложение автоматически открывается на весь экран</p>
+        </div>
+        <div class="feature-item">
+          <strong>Интеграция с Telegram</strong>
+          <p>Доступ к данным пользователя Telegram</p>
+        </div>
       </div>
     </div>
-
-    <button class="cart-btn" onclick="openCart()">
-      🛒
-      <span class="cart-count" id="cart-count">0</span>
-    </button>
 
     <script>
       // Инициализация Telegram Web App
       const tg = window.Telegram.WebApp;
-      tg.ready();
+
+      // Автоматически разворачиваем на полный экран
       tg.expand();
+      tg.enableClosingConfirmation();
 
-      // Данные товаров
-      const products = [
-        {
-          id: 1,
-          name: "Смартфон Xiaomi",
-          price: 19990,
-          image: "📱",
-          description: "Новый смартфон с отличной камерой",
-        },
-        {
-          id: 2,
-          name: "Наушники Wireless",
-          price: 4990,
-          image: "🎧",
-          description: "Беспроводные наушники с шумоподавлением",
-        },
-        {
-          id: 3,
-          name: "Часы Smart Watch",
-          price: 8990,
-          image: "⌚",
-          description: "Умные часы с функцией фитнес-трекера",
-        },
-        {
-          id: 4,
-          name: "Ноутбук HP",
-          price: 45990,
-          image: "💻",
-          description: "Мощный ноутбук для работы и игр",
-        },
-        {
-          id: 5,
-          name: "Кофеварка",
-          price: 12990,
-          image: "☕",
-          description: "Автоматическая кофеварка для дома",
-        },
-        {
-          id: 6,
-          name: "Фитнес-браслет",
-          price: 2990,
-          image: "🏃",
-          description: "Трекер активности и сна",
-        },
-      ];
-
-      // Корзина
-      let cart = [];
-
-      // Инициализация приложения
-      function initApp() {
-        displayProducts();
-        updateCartCount();
+      // Можно получить данные пользователя
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        console.log("User:", user);
       }
 
-      // Отображение товаров
-      function displayProducts() {
-        const productsList = document.getElementById("products-list");
-
-        productsList.innerHTML = products
-          .map(
-            (product) => `
-                <div class="product-card">
-                    <div class="product-image">
-                        <span style="font-size: 48px;">${product.image}</span>
-                    </div>
-                    <div class="product-title">${product.name}</div>
-                    <div class="product-price">${product.price.toLocaleString()} ₽</div>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">${
-                      product.description
-                    }</p>
-                    <button class="btn" onclick="addToCart(${product.id})">
-                        Добавить в корзину
-                    </button>
-                </div>
-            `
-          )
-          .join("");
-      }
-
-      // Добавление в корзину
-      function addToCart(productId) {
-        const product = products.find((p) => p.id === productId);
-        cart.push(product);
-        updateCartCount();
-
+      // Функции для работы с приложением
+      function sendData() {
+        const data = {
+          action: "button_click",
+          timestamp: new Date().toISOString(),
+          message: "Привет из веб-приложения!",
+        };
+        tg.sendData(JSON.stringify(data));
         tg.showPopup({
-          title: "✅ Добавлено!",
-          message: `${product.name} добавлен в корзину`,
+          title: "Успешно!",
+          message: "Данные отправлены в бота",
+          buttons: [{ type: "ok" }],
         });
       }
 
-      // Обновление счетчика корзины
-      function updateCartCount() {
-        document.getElementById("cart-count").textContent = cart.length;
+      function closeApp() {
+        tg.close();
       }
 
-      // Открытие корзины
-      function openCart() {
-        if (cart.length === 0) {
-          tg.showAlert("🛒 Корзина пуста\nДобавьте товары из каталога");
-          return;
-        }
-
-        const total = cart.reduce((sum, item) => sum + item.price, 0);
-        const itemsList = cart
-          .map((item) => `• ${item.name} - ${item.price.toLocaleString()} ₽`)
-          .join("\n");
-
-        tg.showConfirm(
-          `🛒 Ваша корзина:\n\n${itemsList}\n\n💰 Итого: ${total.toLocaleString()} ₽\n\nОформить заказ?`,
-          (isConfirmed) => {
-            if (isConfirmed) {
-              processOrder();
-            }
-          }
-        );
+      function openExternal() {
+        // Открываем внешний сайт в браузере
+        window.open("https://www.dns-shop.ru", "_blank");
       }
 
-      // Оформление заказа
-      function processOrder() {
-        const total = cart.reduce((sum, item) => sum + item.price, 0);
+      // Обработка данных от бота
+      tg.onEvent("viewportChanged", () => {
+        console.log("Viewport changed");
+      });
 
-        tg.showPopup({
-          title: "🎉 Заказ оформлен!",
-          message: `Спасибо за покупку!\nСумма: ${total.toLocaleString()} ₽\nС вами свяжутся для подтверждения.`,
-        });
-
-        // Очищаем корзину
-        cart = [];
-        updateCartCount();
-      }
-
-      // Запускаем приложение
-      initApp();
+      console.log("Telegram Web App initialized in fullscreen mode");
     </script>
   </body>
 </html>
