@@ -1,56 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Fullscreen</title>
+    <title>Fullscreen Mobile App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            background: #000000;
+        * {
             margin: 0;
-            padding: 20px;
-            color: white;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 14px;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .device-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .mobile-only {
+            display: none;
+            background: rgba(0, 255, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .desktop-only {
+            display: block;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-only {
+                display: block;
+            }
+            .desktop-only {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Mobile Fullscreen App</h1>
-    <p id="deviceStatus">Определение устройства...</p>
+    <div id="deviceBadge" class="device-badge">Определение устройства...</div>
+    
+    <div class="container">
+        <h1>📱 Mobile Fullscreen App</h1>
+        <p>Приложение с черным фоном</p>
+        
+        <div class="mobile-only">
+            ✅ Вы на мобильном устройстве - полноэкранный режим активен
+        </div>
+        
+        <div class="desktop-only">
+            💻 Вы на компьютере - обычный режим
+        </div>
+        
+        <div class="info" id="deviceInfo">
+            Информация об устройстве: загрузка...
+        </div>
+        
+        <div class="info" id="modeInfo">
+            Режим: загрузка...
+        </div>
+        
+        <div class="info" id="sizeInfo">
+            Размеры: загрузка...
+        </div>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         
-        function isMobile() {
-            // Основная проверка на мобильное устройство
-            return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()) 
-                   && (tg.platform === 'ios' || tg.platform === 'android');
+        // Функция для определения мобильного устройства
+        function isMobileDevice() {
+            // Способ 1: Проверка User Agent
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+            
+            // Способ 2: Проверка ширины экрана и touch-событий
+            const isMobileScreen = window.innerWidth <= 768;
+            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // Способ 3: Проверка платформы Telegram
+            const isMobilePlatform = tg.platform === 'ios' || tg.platform === 'android';
+            
+            // Итоговый результат (можно настроить логику)
+            return isMobileUA && isMobileScreen && hasTouch && isMobilePlatform;
+        }
+        
+        // Функция для получения подробной информации об устройстве
+        function getDeviceInfo() {
+            return {
+                userAgent: navigator.userAgent,
+                platform: tg.platform,
+                screenWidth: window.innerWidth,
+                screenHeight: window.innerHeight,
+                hasTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+                isMobile: isMobileDevice()
+            };
         }
         
         function initializeApp() {
+            // Базовая инициализация для всех устройств
             tg.ready();
-            tg.expand();
             tg.setBackgroundColor('#000000');
+            tg.setHeaderColor('#000000');
+            tg.expand();
             
-            const deviceStatus = document.getElementById('deviceStatus');
+            const deviceInfo = getDeviceInfo();
+            const deviceBadge = document.getElementById('deviceBadge');
             
-            if (isMobile()) {
-                deviceStatus.textContent = '📱 Мобильное устройство - полноэкранный режим активен';
+            // Обновляем бейдж устройства
+            if (deviceInfo.isMobile) {
+                deviceBadge.textContent = `📱 Mobile (${deviceInfo.platform})`;
+                deviceBadge.style.background = '#44ff44';
                 
-                // Включаем fullscreen только на мобильных
+                // Включаем полноэкранный режим только на мобильных
                 if (tg.isVersionAtLeast('6.1')) {
                     setTimeout(() => {
                         tg.requestFullscreen();
-                    }, 500);
+                        console.log('Fullscreen activated for mobile device');
+                    }, 800);
                 }
             } else {
-                deviceStatus.textContent = '💻 Компьютер - обычный режим';
-                // На компьютере не включаем fullscreen
+                deviceBadge.textContent = '💻 Desktop';
+                deviceBadge.style.background = '#ff4444';
+                console.log('Desktop device - fullscreen not activated');
             }
+            
+            updateAppInfo(deviceInfo);
         }
         
+        function updateAppInfo(deviceInfo) {
+            const deviceElement = document.getElementById('deviceInfo');
+            const modeElement = document.getElementById('modeInfo');
+            const sizeElement = document.getElementById('sizeInfo');
+            
+            deviceElement.innerHTML = `
+                <strong>Платформа:</strong> ${deviceInfo.platform}<br>
+                <strong>Устройство:</strong> ${deviceInfo.isMobile ? 'Мобильное 📱' : 'Компьютер 💻'}<br>
+                <strong>Touch:</strong> ${deviceInfo.hasTouch ? 'Да' : 'Нет'}<br>
+                <strong>Ширина экрана:</strong> ${deviceInfo.screenWidth}px
+            `;
+            
+            modeElement.innerHTML = `
+                <strong>Fullscreen:</strong> ${tg.isFullscreen ? 'ДА ✅' : 'НЕТ ❌'}<br>
+                <strong>Expanded:</strong> ${tg.isExpanded ? 'ДА ✅' : 'НЕТ ❌'}<br>
+                <strong>Версия Telegram:</strong> ${tg.version}
+            `;
+            
+            sizeElement.innerHTML = `
+                <strong>Viewport Height:</strong> ${tg.viewportHeight}px<br>
+                <strong>Stable Height:</strong> ${tg.viewportStableHeight}px
+            `;
+        }
+        
+        // Обработчики событий
+        tg.onEvent('viewportChanged', () => {
+            updateAppInfo(getDeviceInfo());
+        });
+        
+        tg.onEvent('fullscreenChanged', (isFullscreen) => {
+            console.log('Fullscreen changed to:', isFullscreen);
+            updateAppInfo(getDeviceInfo());
+        });
+        
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', () => {
+            updateAppInfo(getDeviceInfo());
+        });
+        
+        // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
